@@ -186,6 +186,42 @@
             font-size: 0.8em;
             color: #95a5a6;
         }
+        
+        /* --- INICIO: NUEVOS ESTILOS PARA EL TABLERO --- */
+        #leaderboard-container {
+            width: 80%;
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #f8f9f9;
+            border-radius: 10px;
+            border: 1px solid #e1e5e8;
+        }
+        #leaderboard-container h3 {
+            margin: 0 0 10px 0;
+            color: #34495e;
+            font-size: 1.1em;
+        }
+        #leaderboard-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        #leaderboard-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            font-size: 1em;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        #leaderboard-list li:last-child {
+            border-bottom: none;
+        }
+        #leaderboard-list li span {
+            font-weight: 600;
+            color: #2980b9;
+        }
+        /* --- FIN: NUEVOS ESTILOS PARA EL TABLERO --- */
+
     </style>
 </head>
 <body>
@@ -201,7 +237,14 @@
             <p>Escribe tu nombre para empezar</p>
             <input type="text" id="name-input" placeholder="Tu nombre">
             <button id="start-with-name-button" class="styled-button">¡A Jugar!</button>
-        </div>
+            
+            <div id="leaderboard-container">
+                <h3>🏆 Top 5 Jugadores</h3>
+                <ol id="leaderboard-list">
+                    <li>Cargando...</li>
+                </ol>
+            </div>
+            </div>
         
         <div id="game-ui" class="hidden">
             <div class="stats-container">
@@ -240,10 +283,77 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        // --- INICIO: CONFIGURACIÓN DE FIREBASE ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        // --- ACTUALIZACIÓN: Importa más funciones de Firestore ---
+        import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAOMU7q5W6PZtpnD5ALuIkU7axoI4CK25M",
+            authDomain: "matematicaskennedy-ea242.firebaseapp.com",
+            projectId: "matematicaskennedy-ea242",
+            storageBucket: "matematicaskennedy-ea242.appspot.com",
+            messagingSenderId: "10387138610",
+            appId: "1:10387138610:web:50f65e29a483a9bd1d342b",
+            measurementId: "G-6XB8R8WEEW"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function saveScore(playerName, finalScore, finalLevel) {
+            try {
+                const docRef = await addDoc(collection(db, "fractionScores"), {
+                    name: playerName,
+                    score: finalScore,
+                    level: finalLevel,
+                    createdAt: serverTimestamp() 
+                });
+                console.log("Puntuación guardada con ID: ", docRef.id);
+            } catch (e) {
+                console.error("Error al guardar la puntuación: ", e);
+            }
+        }
+        
+        // --- INICIO: NUEVA FUNCIÓN PARA OBTENER Y MOSTRAR EL TABLERO ---
+        async function fetchAndDisplayLeaderboard() {
+            const leaderboardList = document.getElementById('leaderboard-list');
+            leaderboardList.innerHTML = '<li>Cargando...</li>'; // Muestra mensaje de carga
+
+            // Crea la consulta a Firestore
+            const scoresRef = collection(db, "fractionScores");
+            const q = query(scoresRef, orderBy("score", "desc"), limit(5));
+
+            try {
+                const querySnapshot = await getDocs(q);
+                leaderboardList.innerHTML = ''; // Limpia la lista
+
+                if (querySnapshot.empty) {
+                    leaderboardList.innerHTML = '<li>¡Sé el primero en jugar!</li>';
+                } else {
+                    let rank = 1;
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const li = document.createElement('li');
+                        // Usamos un emoji para el rango y separamos nombre y puntaje
+                        li.innerHTML = `<span>${rank}. ${data.name}</span> <span>${data.score} pts</span>`;
+                        leaderboardList.appendChild(li);
+                        rank++;
+                    });
+                }
+            } catch (error) {
+                console.error("Error al obtener el tablero: ", error);
+                leaderboardList.innerHTML = '<li>No se pudo cargar el tablero.</li>';
+            }
+        }
+        // --- FIN: NUEVA FUNCIÓN PARA OBTENER Y MOSTRAR EL TABLERO ---
+
+
         // --- ELEMENTOS DEL DOM ---
         const welcomeScreen = document.getElementById('welcome-screen');
         const gameUI = document.getElementById('game-ui');
+        // ... (el resto de los elementos del DOM no cambia)
         const gameOverScreen = document.getElementById('game-over-screen');
         const nameInput = document.getElementById('name-input');
         const startWithNameButton = document.getElementById('start-with-name-button');
@@ -281,6 +391,7 @@
         } catch(e) { console.error("Web Audio API is not supported in this browser"); }
 
         function playSound(type) {
+            // ... (código de audio sin cambios)
             if (!audioContext) return;
             const osc = audioContext.createOscillator();
             const gain = audioContext.createGain();
@@ -305,7 +416,7 @@
         }
 
         // --- FUNCIONES MATEMÁTICAS AUXILIARES ---
-        function gcd(a, b) { // Máximo Común Divisor
+        function gcd(a, b) {
             return b === 0 ? a : gcd(b, a % b);
         }
 
@@ -343,8 +454,15 @@
             finalScoreDisplay.textContent = `Tu puntuación final: ${game.score}`;
             updateTrafficLight();
             showScreen('gameOver');
+            
+            // Llama a guardar la puntuación y LUEGO actualiza el tablero
+            saveScore(game.playerName, game.score, game.level).then(() => {
+                fetchAndDisplayLeaderboard();
+            });
         }
 
+        // --- El resto del código del juego (updateTimer, generateProblem, checkAnswer, etc.) no tiene cambios ---
+        // ...
         function updateTimer() {
             game.timeRemaining--;
             updateDisplays();
@@ -430,11 +548,9 @@
                     const [userNum, userDen] = userAnswer.split('/').map(Number);
                     if(isNaN(userNum) || isNaN(userDen)) throw new Error("Invalid fraction");
 
-                    // Simplificar respuesta correcta para comparar
                     const commonDivisor = gcd(answer.num, answer.den);
                     const simplifiedAns = { num: answer.num / commonDivisor, den: answer.den / commonDivisor };
 
-                    // Simplificar respuesta de usuario para comparar
                     const userCommonDivisor = gcd(userNum, userDen);
                     const simplifiedUserAns = { num: userNum / userCommonDivisor, den: userDen / userCommonDivisor };
 
@@ -470,12 +586,11 @@
             game.level++;
             game.xp -= game.xpForNextLevel;
             game.xpForNextLevel = Math.floor(game.xpForNextLevel * 1.5);
-            game.timeRemaining = game.maxTime; // Reinicia el tiempo
+            game.timeRemaining = game.maxTime;
             levelUpNotif.classList.remove('hidden');
             setTimeout(() => levelUpNotif.classList.add('hidden'), 2000);
         }
 
-        // --- FUNCIONES DE ACTUALIZACIÓN DE UI ---
         function updateDisplays() {
             scoreDisplay.textContent = game.score;
             levelDisplay.textContent = game.level;
@@ -504,9 +619,14 @@
                 document.querySelector('#traffic-light .green').classList.add('active');
             }
         }
+        // ...
 
         // --- EVENT LISTENERS ---
-        document.addEventListener('DOMContentLoaded', () => showScreen('welcome'));
+        document.addEventListener('DOMContentLoaded', () => {
+            showScreen('welcome');
+            // --- ACTUALIZACIÓN: Llama al tablero cuando la página carga ---
+            fetchAndDisplayLeaderboard();
+        });
         
         startWithNameButton.addEventListener('click', () => {
             const name = nameInput.value.trim();
@@ -514,7 +634,10 @@
             startGame();
         });
 
-        playAgainButton.addEventListener('click', startGame);
+        playAgainButton.addEventListener('click', () => {
+            // Vuelve a mostrar la pantalla de bienvenida donde está el tablero actualizado
+            showScreen('welcome');
+        });
 
         answerInput.addEventListener('keydown', (event) => {
             if (event.key === 'Enter' && game.isPlaying) checkAnswer();
