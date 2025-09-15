@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mente Matemática: Reto de Fracciones</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .game-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: #ffffff;
+            padding: 30px 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .header {
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin: 0;
+        }
+        .school-name {
+            margin: -10px 0 20px 0;
+            font-size: 1em;
+            font-weight: 400;
+            color: #7f8c8d;
+        }
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            font-size: 1.2em;
+            margin: 20px 0;
+            color: #555;
+        }
+        .stat {
+            font-weight: 600;
+        }
+        .stat span {
+            display: block;
+            font-size: 0.7em;
+            color: #7f8c8d;
+            font-weight: 400;
+        }
+        .bar-container {
+            width: 100%;
+            height: 15px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .bar {
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease-in-out;
+        }
+        #timer-bar {
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+        }
+        #xp-bar {
+            background: linear-gradient(90deg, #9b59b6, #8e44ad);
+        }
+        .game-area {
+            min-height: 150px;
+            margin-top: 20px;
+        }
+        #problem-container {
+            font-size: 3em;
+            font-weight: 700;
+            color: #34495e;
+            margin-bottom: 20px;
+        }
+        #answer-input, #name-input {
+            width: 80%;
+            padding: 15px;
+            font-size: 2em;
+            text-align: center;
+            border: 3px solid #bdc3c7;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+        #answer-input:focus, #name-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.4);
+        }
+        #answer-input.correct {
+            border-color: #2ecc71;
+            background-color: #e8f8f5;
+        }
+        #answer-input.incorrect {
+            border-color: #e74c3c;
+            background-color: #fdedec;
+        }
+        .styled-button {
+            padding: 15px 30px;
+            font-size: 1.5em;
+            font-weight: 600;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            background-color: #2ecc71;
+        }
+        .styled-button:hover {
+            background-color: #27ae60;
+            transform: translateY(-3px);
+        }
+        #welcome-screen, #game-over-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #name-input {
+            margin: 20px 0;
+            font-size: 1.5em;
+        }
+        #game-over-screen h2 {
+            font-size: 2.2em;
+            color: #34495e;
+            margin-bottom: 10px;
+        }
+        #final-score {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+        .hidden {
+            display: none !important;
+        }
+        #level-up-notif {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px 40px;
+            background-color: rgba(44, 62, 80, 0.9);
+            color: white;
+            font-size: 2em;
+            font-weight: 700;
+            border-radius: 15px;
+            z-index: 10;
+            animation: fadeInOut 2s ease-in-out forwards;
+        }
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            10%, 90% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        #traffic-light {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .light {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #bdc3c7;
+            opacity: 0.4;
+            transition: all 0.3s;
+        }
+        .light.red.active { background-color: #e74c3c; opacity: 1; box-shadow: 0 0 15px #e74c3c; }
+        .light.yellow.active { background-color: #f1c40f; opacity: 1; box-shadow: 0 0 15px #f1c40f; }
+        .light.green.active { background-color: #2ecc71; opacity: 1; box-shadow: 0 0 15px #2ecc71; }
+        .footer {
+            margin-top: 30px;
+            font-size: 0.8em;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div class="header">
+            <h1>Mente Matemática</h1>
+            <h2 class="school-name">Colegio John F. Kennedy</h2>
+        </div>
+
+        <div id="welcome-screen">
+            <h2>¡Reto de Fracciones!</h2>
+            <p>Escribe tu nombre para empezar</p>
+            <input type="text" id="name-input" placeholder="Tu nombre">
+            <button id="start-with-name-button" class="styled-button">¡A Jugar!</button>
+        </div>
+        
+        <div id="game-ui" class="hidden">
+            <div class="stats-container">
+                <div class="stat"><span id="score">0</span>Puntos</div>
+                <div class="stat"><span id="level">1</span>Nivel</div>
+                <div class="stat"><span id="streak">0</span>Racha</div>
+            </div>
+            <div class="bar-container">
+                <div id="timer-bar" class="bar"></div>
+            </div>
+            <div class="bar-container">
+                <div id="xp-bar" class="bar"></div>
+            </div>
+            <div class="game-area">
+                <div id="problem-container"></div>
+                <input type="text" id="answer-input" placeholder="Tu respuesta" autofocus>
+            </div>
+        </div>
+
+        <div id="game-over-screen" class="hidden">
+            <h2 id="game-over-title">¡Juego Terminado!</h2>
+            <div id="traffic-light">
+                <div class="light red"></div>
+                <div class="light yellow"></div>
+                <div class="light green"></div>
+            </div>
+            <p id="final-score">Tu puntuación: 0</p>
+            <button id="play-again-button" class="styled-button">Jugar de Nuevo</button>
+        </div>
+        
+        <div id="level-up-notif" class="hidden">¡Nivel Subido!</div>
+
+        <div class="footer">
+            <p>Colegio John F. Kennedy</p>
+            <p>by Toiram</p>
+        </div>
+    </div>
+
+    <script>
+        // --- ELEMENTOS DEL DOM ---
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const gameUI = document.getElementById('game-ui');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const nameInput = document.getElementById('name-input');
+        const startWithNameButton = document.getElementById('start-with-name-button');
+        const playAgainButton = document.getElementById('play-again-button');
+        const answerInput = document.getElementById('answer-input');
+        const problemContainer = document.getElementById('problem-container');
+        const scoreDisplay = document.getElementById('score');
+        const levelDisplay = document.getElementById('level');
+        const streakDisplay = document.getElementById('streak');
+        const timerBar = document.getElementById('timer-bar');
+        const xpBar = document.getElementById('xp-bar');
+        const gameOverTitle = document.getElementById('game-over-title');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const levelUpNotif = document.getElementById('level-up-notif');
+        
+        // --- ESTADO DEL JUEGO ---
+        const game = {
+            playerName: 'Jugador',
+            score: 0,
+            level: 1,
+            xp: 0,
+            xpForNextLevel: 100,
+            streak: 0,
+            timeRemaining: 60,
+            maxTime: 60,
+            timerInterval: null,
+            isPlaying: false,
+            currentProblem: { text: "", answer: 0, type: '' }
+        };
+
+        // --- LÓGICA DE AUDIO (OPCIONAL) ---
+        let audioContext;
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch(e) { console.error("Web Audio API is not supported in this browser"); }
+
+        function playSound(type) {
+            if (!audioContext) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.4);
+            
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, audioContext.currentTime);
+            } else if (type === 'incorrect') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, audioContext.currentTime);
+            } else if (type === 'levelUp') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.2);
+            }
+            osc.start(audioContext.currentTime);
+            osc.stop(audioContext.currentTime + 0.5);
+        }
+
+        // --- FUNCIONES MATEMÁTICAS AUXILIARES ---
+        function gcd(a, b) { // Máximo Común Divisor
+            return b === 0 ? a : gcd(b, a % b);
+        }
+
+        // --- LÓGICA PRINCIPAL DEL JUEGO ---
+        function showScreen(screen) {
+            welcomeScreen.classList.add('hidden');
+            gameUI.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            if (screen === 'welcome') welcomeScreen.classList.remove('hidden');
+            else if (screen === 'game') gameUI.classList.remove('hidden');
+            else if (screen === 'gameOver') gameOverScreen.classList.remove('hidden');
+        }
+        
+        function startGame() {
+            Object.assign(game, {
+                score: 0, level: 1, xp: 0, xpForNextLevel: 100,
+                streak: 0, timeRemaining: game.maxTime, isPlaying: true
+            });
+
+            showScreen('game');
+            answerInput.value = '';
+            setTimeout(() => answerInput.focus(), 0);
+
+            updateDisplays();
+            generateProblem();
+            
+            clearInterval(game.timerInterval);
+            game.timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function endGame() {
+            game.isPlaying = false;
+            clearInterval(game.timerInterval);
+            gameOverTitle.textContent = `¡Buen intento, ${game.playerName}!`;
+            finalScoreDisplay.textContent = `Tu puntuación final: ${game.score}`;
+            updateTrafficLight();
+            showScreen('gameOver');
+        }
+
+        function updateTimer() {
+            game.timeRemaining--;
+            updateDisplays();
+            if (game.timeRemaining <= 0) endGame();
+        }
+
+        function generateProblem() {
+            const levelType = Math.min(game.level, 6);
+            let num1, num2, den1, den2, problemText, answer;
+
+            switch (levelType) {
+                case 1: // Fracción a Decimal
+                    game.currentProblem.type = 'to_decimal';
+                    den1 = [2, 4, 5, 10][Math.floor(Math.random() * 4)];
+                    num1 = Math.floor(Math.random() * (den1 - 1)) + 1;
+                    problemText = `${num1}/${den1} a decimal`;
+                    answer = num1 / den1;
+                    break;
+                case 2: // Decimal a Fracción
+                    game.currentProblem.type = 'to_fraction';
+                    const decimals = [0.5, 0.25, 0.75, 0.2, 0.4, 0.6, 0.8];
+                    const fractions = ["1/2", "1/4", "3/4", "1/5", "2/5", "3/5", "4/5"];
+                    const randomIndex = Math.floor(Math.random() * decimals.length);
+                    problemText = `${decimals[randomIndex]} a fracción`;
+                    answer = fractions[randomIndex];
+                    break;
+                case 3: // Suma con denominador común
+                    game.currentProblem.type = 'fraction_op';
+                    den1 = Math.floor(Math.random() * 8) + 3;
+                    num1 = Math.floor(Math.random() * (den1 - 1)) + 1;
+                    num2 = Math.floor(Math.random() * (den1 - num1 - 1)) + 1;
+                    problemText = `${num1}/${den1} + ${num2}/${den1}`;
+                    answer = { num: num1 + num2, den: den1 };
+                    break;
+                case 4: // Resta con denominador común
+                    game.currentProblem.type = 'fraction_op';
+                    den1 = Math.floor(Math.random() * 8) + 3;
+                    num1 = Math.floor(Math.random() * (den1 - 2)) + 2;
+                    num2 = Math.floor(Math.random() * (num1 - 1)) + 1;
+                    problemText = `${num1}/${den1} - ${num2}/${den1}`;
+                    answer = { num: num1 - num2, den: den1 };
+                    break;
+                case 5: // Suma con diferente denominador
+                case 6: // Y Resta (alternando)
+                    game.currentProblem.type = 'fraction_op';
+                    den1 = [2, 3, 4, 5][Math.floor(Math.random() * 4)];
+                    den2 = [2, 3, 4, 5].filter(d => d !== den1)[Math.floor(Math.random() * 3)];
+                    num1 = Math.floor(Math.random() * (den1 - 1)) + 1;
+                    num2 = Math.floor(Math.random() * (den2 - 1)) + 1;
+                    
+                    if(Math.random() > 0.5) { // Suma
+                        problemText = `${num1}/${den1} + ${num2}/${den2}`;
+                        answer = { num: num1 * den2 + num2 * den1, den: den1 * den2 };
+                    } else { // Resta (asegurando resultado positivo)
+                        if (num1 / den1 < num2 / den2) [num1, den1, num2, den2] = [num2, den2, num1, den1]; // Swap
+                        problemText = `${num1}/${den1} - ${num2}/${den2}`;
+                        answer = { num: num1 * den2 - num2 * den1, den: den1 * den2 };
+                    }
+                    break;
+            }
+            game.currentProblem.text = problemText;
+            game.currentProblem.answer = answer;
+            problemContainer.textContent = game.currentProblem.text;
+        }
+
+        function checkAnswer() {
+            const userAnswer = answerInput.value.trim();
+            if (userAnswer === '') return;
+
+            let isCorrect = false;
+            const { type, answer } = game.currentProblem;
+
+            try {
+                 if (type === 'to_decimal') {
+                    const userNum = parseFloat(userAnswer);
+                    isCorrect = Math.abs(userNum - answer) < 0.001;
+                } else if (type === 'to_fraction') {
+                    const [userNum, userDen] = userAnswer.split('/').map(Number);
+                    const [ansNum, ansDen] = answer.split('/').map(Number);
+                    if(isNaN(userNum) || isNaN(userDen)) throw new Error("Invalid fraction");
+                    isCorrect = (userNum / userDen === ansNum / ansDen);
+                } else if (type === 'fraction_op') {
+                    const [userNum, userDen] = userAnswer.split('/').map(Number);
+                    if(isNaN(userNum) || isNaN(userDen)) throw new Error("Invalid fraction");
+
+                    // Simplificar respuesta correcta para comparar
+                    const commonDivisor = gcd(answer.num, answer.den);
+                    const simplifiedAns = { num: answer.num / commonDivisor, den: answer.den / commonDivisor };
+
+                    // Simplificar respuesta de usuario para comparar
+                    const userCommonDivisor = gcd(userNum, userDen);
+                    const simplifiedUserAns = { num: userNum / userCommonDivisor, den: userDen / userCommonDivisor };
+
+                    isCorrect = simplifiedUserAns.num === simplifiedAns.num && simplifiedUserAns.den === simplifiedAns.den;
+                }
+            } catch (e) {
+                isCorrect = false;
+                console.log("Invalid user input");
+            }
+
+            if (isCorrect) {
+                playSound('correct');
+                game.score += 10 + game.streak;
+                game.streak++;
+                game.xp += 15;
+                game.timeRemaining = Math.min(game.maxTime, game.timeRemaining + 2);
+                visualFeedback(true);
+                if (game.xp >= game.xpForNextLevel) levelUp();
+            } else {
+                playSound('incorrect');
+                game.streak = 0;
+                game.timeRemaining = Math.max(0, game.timeRemaining - 5);
+                visualFeedback(false);
+            }
+
+            answerInput.value = '';
+            updateDisplays();
+            generateProblem();
+        }
+        
+        function levelUp() {
+            playSound('levelUp');
+            game.level++;
+            game.xp -= game.xpForNextLevel;
+            game.xpForNextLevel = Math.floor(game.xpForNextLevel * 1.5);
+            game.timeRemaining = game.maxTime; // Reinicia el tiempo
+            levelUpNotif.classList.remove('hidden');
+            setTimeout(() => levelUpNotif.classList.add('hidden'), 2000);
+        }
+
+        // --- FUNCIONES DE ACTUALIZACIÓN DE UI ---
+        function updateDisplays() {
+            scoreDisplay.textContent = game.score;
+            levelDisplay.textContent = game.level;
+            streakDisplay.textContent = game.streak;
+            
+            const timePercentage = Math.max(0, (game.timeRemaining / game.maxTime) * 100);
+            timerBar.style.width = `${timePercentage}%`;
+            
+            const xpPercentage = Math.max(0, (game.xp / game.xpForNextLevel) * 100);
+            xpBar.style.width = `${xpPercentage}%`;
+        }
+
+        function visualFeedback(isCorrect) {
+            const className = isCorrect ? 'correct' : 'incorrect';
+            answerInput.classList.add(className);
+            setTimeout(() => answerInput.classList.remove(className), 300);
+        }
+
+        function updateTrafficLight() {
+            document.querySelectorAll('#traffic-light .light').forEach(l => l.classList.remove('active'));
+            if (game.level <= 2) {
+                document.querySelector('#traffic-light .red').classList.add('active');
+            } else if (game.level <= 4) {
+                document.querySelector('#traffic-light .yellow').classList.add('active');
+            } else {
+                document.querySelector('#traffic-light .green').classList.add('active');
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        document.addEventListener('DOMContentLoaded', () => showScreen('welcome'));
+        
+        startWithNameButton.addEventListener('click', () => {
+            const name = nameInput.value.trim();
+            if (name) game.playerName = name;
+            startGame();
+        });
+
+        playAgainButton.addEventListener('click', startGame);
+
+        answerInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && game.isPlaying) checkAnswer();
+        });
+
+        nameInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') startWithNameButton.click();
+        });
+
+    </script>
+</body>
+</html>
